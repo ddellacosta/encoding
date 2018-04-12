@@ -1,46 +1,34 @@
+{-# LANGUAGE LambdaCase #-}
 
-module Encoding2 where
+module Encoding3 where
 
-import Control.Monad.Fix
+import Data.Bifunctor
 import Data.List
+import Data.Tuple
 import Shared
 
---
--- (from Control.Monad.Fix)
---
--- fix :: (a -> a) -> a
--- fix f = let {x = f x} in x
-
---
--- > fix toIntegerRep "1010" "01" 0
--- 10
---
-
-toIntegerRep :: (EncodedString -> Encoding -> Accumulator -> IntRep)
-  -> EncodedString -> Encoding -> Accumulator -> IntRep
-toIntegerRep _ [] source acc = acc
-toIntegerRep f (c:cs) source acc = f cs source acc'
+toIntegerRep :: EncodedString -> Encoding -> IntRep
+toIntegerRep es source = foldl' (\acc c -> (getPos c source) + (base * acc)) 0 es
   where base = genericLength source
-        acc' = (getPos c source) + (base * acc)
-
-
---
--- (still needs the final reversal)
---
--- > fix fromIntegerRep' 10 "01"
--- "0101"
---
-
-fromIntegerRep' :: (IntRep -> Encoding -> EncodedString)
-  -> IntRep -> Encoding -> EncodedString
-fromIntegerRep' _ 0 target = ""
-fromIntegerRep' f intRep target = (getEncChar rm target) : f intRep' target
-  where (intRep', rm) = divMod intRep base
-        base          = genericLength target
 
 fromIntegerRep :: IntRep -> Encoding -> EncodedString
-fromIntegerRep intRep target = reverse $ fix fromIntegerRep' intRep target
+fromIntegerRep intRep target = reverse $ unfoldr
+  (\case
+      0 -> Nothing
+      n -> let (intRep', rm) = divMod n base
+           in Just ((getEncChar rm target), intRep'))
+  intRep
+  where base = genericLength target
 
 convert :: Encoding -> Encoding -> EncodedString -> EncodedString
-convert source target sourceString = fromIntegerRep intRep target
-  where intRep = (fix toIntegerRep sourceString source 0)
+convert source target = (flip fromIntegerRep target) . (flip toIntegerRep source)
+
+
+-- a slightly cleaner approach, using bifunctor to avoid using let
+
+fromIntegerRep2 :: IntRep -> Encoding -> EncodedString
+fromIntegerRep2 intRep target =
+  let base = genericLength target
+      go 0 = Nothing
+      go n = (Just . swap . second (flip getEncChar target)) (divMod n base)
+  in reverse $ unfoldr go intRep
