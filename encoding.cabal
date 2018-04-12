@@ -1,0 +1,27 @@
+name:                encoding
+version:             0.1.0.0
+-- synopsis:
+-- description:
+homepage:            https://github.com/ddellacosta/encoding#readme
+license:             BSD3
+license-file:        LICENSE
+author:              Dave Della Costa
+maintainer:          ddellacosta@gmail.com
+copyright:           Dave Della Costa 2016
+category:            many
+build-type:          Simple
+extra-source-files:  README.md
+cabal-version:       >=1.10
+
+library
+  hs-source-dirs:      src
+  exposed-modules:     Shared, Encoding1, Encoding2, Encoding3
+  build-depends:       base >= 4.7 && < 5
+                     , recursion-schemes
+                     , mtl
+                     , safe
+  default-language:    Haskell2010
+
+source-repository head
+  type:     git
+  location: https://github.com/ddellacosta/encoding
